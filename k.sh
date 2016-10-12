@@ -1,6 +1,9 @@
 zmodload zsh/datetime
 zmodload -F zsh/stat b:zstat
 
+type ls_colors=("${(@s.:.)LS_COLORS}")
+type -a ls_colors=("${(@s.=.)ls_colors}")
+
 k () {
   # ----------------------------------------------------------------------------
   # Setup
@@ -97,20 +100,20 @@ k () {
   # Colors
   # ----------------------------------------------------------------------------
   # default colors
-  K_COLOR_DI="0;34"  # di:directory
-  K_COLOR_LN="0;35"  # ln:symlink
-  K_COLOR_SO="0;32"  # so:socket
-  K_COLOR_PI="0;33"  # pi:pipe
-  K_COLOR_EX="0;31"  # ex:executable
-  K_COLOR_BD="34;46" # bd:block special
-  K_COLOR_CD="34;43" # cd:character special
-  K_COLOR_SU="30;41" # su:executable with setuid bit set
-  K_COLOR_SG="30;46" # sg:executable with setgid bit set
-  K_COLOR_TW="30;42" # tw:directory writable to others, with sticky bit
-  K_COLOR_OW="30;43" # ow:directory writable to others, without sticky bit
+  K_COLOR_DI="${ls_colors[di]:-0;34}"  # di:directory
+  K_COLOR_LN="${ls_colors[ln]:-0;35}"  # ln:symlink
+  K_COLOR_SO="${ls_colors[so]:-0;32}"  # so:socket
+  K_COLOR_PI="${ls_colors[pi]:-0;33}"  # pi:pipe
+  K_COLOR_EX="${ls_colors[ex]:-0;31}"  # ex:executable
+  K_COLOR_BD="${ls_colors[bd]:-34;46}" # bd:block special
+  K_COLOR_CD="${ls_colors[cd]:-34;43}" # cd:character special
+  K_COLOR_SU="${ls_colors[su]:-30;41}" # su:executable with setuid bit set
+  K_COLOR_SG="${ls_colors[sg]:-30;46}" # sg:executable with setgid bit set
+  K_COLOR_TW="${ls_colors[tw]:-30;42}" # tw:directory writable to others, with sticky bit
+  K_COLOR_OW="${ls_colors[ow]:-30;43}" # ow:directory writable to others, without sticky bit
 
   # read colors if osx and $LSCOLORS is defined
-  if [[ $(uname) == 'Darwin' && -n $LSCOLORS ]]; then
+  if [[ ${#ls_colors} -eq 0 && -n $LSCOLORS ]]; then
     # Translate OSX/BSD's LSCOLORS so we can use the same here
     K_COLOR_DI=$(_k_bsd_to_ansi $LSCOLORS[1]  $LSCOLORS[2])
     K_COLOR_LN=$(_k_bsd_to_ansi $LSCOLORS[3]  $LSCOLORS[4])
@@ -125,10 +128,6 @@ k () {
     K_COLOR_OW=$(_k_bsd_to_ansi $LSCOLORS[21] $LSCOLORS[22])
   fi
 
-  # read colors if linux and $LS_COLORS is defined
-  # if [[ $(uname) == 'Linux' && -n $LS_COLORS ]]; then
-
-  # fi
 
   # ----------------------------------------------------------------------------
   # Loop over passed directories and files to display
@@ -339,6 +338,7 @@ k () {
         IS_GIT_REPO=0
         GIT_TOPLEVEL=''
       else
+        # TODO Fuck you
         if (( IS_DIRECTORY ));
           then builtin cd -q $NAME     2>/dev/null || builtin cd -q - >/dev/null && IS_GIT_REPO=0 #Say no if we don't have permissions there
           else builtin cd -q $NAME:a:h 2>/dev/null || builtin cd -q - >/dev/null && IS_GIT_REPO=0
@@ -474,7 +474,7 @@ k () {
       # --------------------------------------------------------------------------
       # Unfortunately, the choices for quoting which escape ANSI color sequences are q & qqqq; none of q- qq qqq work.
       # But we don't want to quote '.'; so instead we escape the escape manually and use q-
-      NAME="${${NAME##*/}//$'\e'/\\e}"    # also propagate changes to SYMLINK_TARGET below
+      NAME="${${NAME:t}//$'\e'/\\e}"    # also propagate changes to SYMLINK_TARGET below
 
       if [[ $IS_DIRECTORY == 1 ]]; then
         if [[ $IS_WRITABLE_BY_OTHERS == 1 ]]; then
